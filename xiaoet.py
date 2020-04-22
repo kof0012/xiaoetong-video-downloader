@@ -9,9 +9,11 @@ import requests
 import subprocess
 import time
 import sys
-
+import pdb
 from m3u8.model import SegmentList, Segment, find_key
 from bs4 import BeautifulSoup
+
+pdb.set_trace()
 
 class Xet(object):
     def __init__(self, appid, re_login=False):
@@ -45,7 +47,7 @@ class Xet(object):
                 session.cookies[key] = value
         else:
             headers = {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:74.0) Gecko/20100101 Firefox/74.0',
                 'Referer': '',
                 'Origin': 'https://pc-shop.xiaoe-tech.com',
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -61,8 +63,9 @@ class Xet(object):
             for _ in range(300):
                 res = json.loads(session.post('https://pc-shop.xiaoe-tech.com/{appid}/checkIfUserHasLogin'.format(appid=self.appid), data={'code': initdata['code']}).text)
                 if not res['code'] and res['data']['code'] == 1:
-                    islogin = True
-                    break
+                                 islogin = True
+                                 break
+                    
                 else:
                     time.sleep(1)
             if islogin:
@@ -186,6 +189,7 @@ class Xet(object):
         if changed or not os.path.exists(m3u8_file):
             media.segments = segments
             with open(m3u8_file, 'w', encoding='utf8') as f:
+                print(type(media.dumps()))
                 f.write(media.dumps())
         metadata = {'title': resource['title'], 'complete': complete}
         with open(os.path.join(download_dir, resource['id'], 'metadata'), 'w') as f:
@@ -216,7 +220,11 @@ class Xet(object):
             with open(os.path.join(resource_dir, 'metadata')) as f:
                 metadata = json.load(f)
             if metadata['complete']:
-                ff = ffmpy.FFmpeg(inputs={os.path.join(resource_dir, 'video.m3u8'): ['-protocol_whitelist', 'crypto,file,http,https,tcp,tls']}, outputs={os.path.join(self.download_dir, metadata['title'] + '.mp4'): None})
+                os.chdir(os.path.join(resource_dir))
+                ff = ffmpy.FFmpeg(inputs={'video.m3u8': ['-protocol_whitelist', 'file,http,https,tcp,tls,crypto']}, outputs={metadata['title'] + '.mp4':""})
+                
+                #os.system('ffmpeg -protocol_whitelist "file,http,https,tcp,tls,crypto" -i video.m3u8 ccc.mp4')
+    
                 print(ff.cmd)
                 ff.run()
         return
@@ -255,18 +263,22 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    args = parse_args()
-    xet = Xet(args.appid, args.login)
-    if args.d:
-        xet.download(args.d, args.nocache)
-    if args.rl:
-        xet.get_resource_list(args.rl)
-    if args.pl:
-        xet.get_product_list()
-    if args.r2p:
-        xet.get_productid(args.r2p)
-    if args.tc:
-        xet.transcode(args.tc)
-
+    xet=Xet("applAath11j8192")
+#     xet.get_resource_list("p_5d566794eb46b_Ie0wePy0")
+    xet.download("p_5d566794eb46b_Ie0wePy0")
+#     args = parse_args()
+#     xet = Xet(args.appid, args.login)
+#     if args.d:
+#         xet.download(args.d, args.nocache)
+#     if args.rl:
+#         xet.get_resource_list(args.rl)
+#     if args.pl:
+#         xet.get_product_list()
+#     if args.r2p:
+#         xet.get_productid(args.r2p)
+#     if args.tc:
+#         xet.transcode(args.tc)
+    
 if __name__ == '__main__':
+
     main()
